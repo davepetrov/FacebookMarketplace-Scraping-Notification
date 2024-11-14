@@ -15,7 +15,7 @@ def lambda_handler(event, context):
         accumulated_items = []
         saved_items = []
         # Run searches in parallel
-        with ThreadPoolExecutor(max_workers=2) as executor:
+        with ThreadPoolExecutor(max_workers=1) as executor:
             futures = [
                 executor.submit(
                     scraper.search_marketplace,
