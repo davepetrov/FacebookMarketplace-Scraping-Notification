@@ -6,34 +6,28 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from utils.DatabaseUtils import save_results, get_existing_links 
 from selenium.webdriver.chrome.service import Service
-from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.chrome.options import ChromeOptions
 import time
 
 class MarketplaceScraper:
     def __init__(self):
-        self.options = Options()
-        self.options.binary_location = "/opt/chrome/chrome"
+        self.options = ChromeOptions()
         self.options.add_argument("--headless=new")
         self.options.add_argument("--no-sandbox")
         self.options.add_argument("--disable-dev-shm-usage")
-        self.options.add_argument("--single-process")
+        self.options.add_argument("--disable-gpu")
         self.options.add_argument("--disable-dev-tools")
         self.options.add_argument("--no-zygote")
-        self.options.add_argument("--disable-gpu")
-        self.options.add_argument("--window-size=2560,1440")
-        self.options.add_argument("--disable-setuid-sandbox")
-        self.options.add_argument("--disable-extensions")
-        self.options.add_argument("--disable-software-rasterizer")
-        self.options.add_argument("--disable-notifications")
-        self.options.add_argument("--disable-popup-blocking")
-        
-        # Add additional Chrome options
-        self.options.add_argument("--disable-blink-features=AutomationControlled")
-        self.options.add_argument("--disable-infobars")
-        self.options.add_experimental_option("excludeSwitches", ["enable-automation"])
-        self.options.add_experimental_option("useAutomationExtension", False)
-        
-        self.service = Service("/opt/chromedriver")
+        self.options.add_argument("--single-process")
+        self.options.add_argument(f"--user-data-dir={mkdtemp()}")
+        self.options.add_argument(f"--data-path={mkdtemp()}")
+        self.options.add_argument("--log-path=/tmp")
+        self.options.binary_location = "/opt/chrome/chrome-linux64/chrome"
+
+        self.service = Service(
+            executable_path="/opt/chrome-driver/chromedriver-linux64/chromedriver",
+            service_log_path="/tmp/chromedriver.log"
+        )
 
 
     def _is_location_allowed(self, location_text, cities_search, province_search):
