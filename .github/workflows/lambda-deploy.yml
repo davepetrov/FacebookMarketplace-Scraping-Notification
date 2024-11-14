@@ -1,18 +1,16 @@
-name: Deploy Lambda Container
+name: Deploy Lambda
+
 on:
   push:
-    paths:
-      - "src/**"
-      - "Dockerfile"
-      - "requirements.txt"
-    branches: [main]
-    
+    branches:
+      - main
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      
+      - uses: actions/checkout@v2
+
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v1
         with:
@@ -20,38 +18,18 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: us-east-1
 
-      - name: Login to Amazon ECR
-        id: login-ecr
-        uses: aws-actions/amazon-ecr-login@v1
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.11'
 
-      - name: Build, tag, and push image to Amazon ECR
-        env:
-          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-          ECR_REPOSITORY: facebook-marketplace-scraper
-          IMAGE_TAG: ${{ github.sha }}
+      - name: Install dependencies
         run: |
-          # Create ECR repository if it doesn't exist
-          aws ecr describe-repositories --repository-names ${ECR_REPOSITORY} || \
-          aws ecr create-repository --repository-name ${ECR_REPOSITORY}
-          
-          # Build and push Docker image
-          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
-          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
-          
-          # Tag as latest
-          docker tag $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG $ECR_REGISTRY/$ECR_REPOSITORY:latest
-          docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
-          
-          echo "::set-output name=image::$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG"
+          pip install aws-sam-cli
 
-      - name: Update Lambda Function
+      - name: Update Lambda function code
         run: |
+          zip -r function.zip .
           aws lambda update-function-code \
             --function-name FacebookMarketplace_Item_Scraper \
-            --image-uri ${{ steps.login-ecr.outputs.registry }}/facebook-marketplace-scraper:latest
-          
-          aws lambda update-function-configuration \
-            --function-name FacebookMarketplace_Item_Scraper \
-            --timeout 300 \
-            --memory-size 2048 \
-            --environment "Variables={DYNAMODB_TABLE_NAME=MarketplaceResults}"
+            --zip-file fileb://function.zip

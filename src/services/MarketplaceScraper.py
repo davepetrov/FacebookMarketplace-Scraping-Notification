@@ -8,19 +8,22 @@ from utils.DatabaseUtils import save_results, get_existing_links
 
 class MarketplaceScraper:
     def __init__(self):
-        # Initialize Chrome options as before
         self.chrome_options = Options()
-        self.chrome_options.add_argument("--headless")
-        self.chrome_options.add_argument("--no-sandbox")
-        self.chrome_options.add_argument("--disable-dev-shm-usage")
+        self.chrome_options.add_argument('--headless')
+        self.chrome_options.add_argument('--no-sandbox')
+        self.chrome_options.add_argument('--disable-dev-shm-usage')
+        self.chrome_options.binary_location = '/opt/chrome/chrome'
         
-class MarketplaceScraper:
-    def __init__(self):
-        # Initialize Chrome options as before
-        self.chrome_options = Options()
-        self.chrome_options.add_argument("--headless")
-        self.chrome_options.add_argument("--no-sandbox")
-        self.chrome_options.add_argument("--disable-dev-shm-usage")
+    def initialize_browser(self):
+        service = Service(executable_path='/opt/chromedriver')
+        self.browser = webdriver.Chrome(
+            service=service,
+            options=self.chrome_options
+        )
+        
+    def cleanup(self):
+        if hasattr(self, 'browser'):
+            self.browser.quit()
 
     def _is_location_allowed(self, location_text, cities_search, province_search):
         """

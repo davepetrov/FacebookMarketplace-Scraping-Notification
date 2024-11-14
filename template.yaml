@@ -1,0 +1,16 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: Facebook Marketplace Scraper
+
+Resources:
+  FacebookMarketplaceItemScraper:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: FacebookMarketplace_Item_Scraper
+      PackageType: Image
+      ImageUri: public.ecr.aws/umihico/aws-lambda-selenium-python:latest
+      MemorySize: 2048
+      Timeout: 300
+      Environment:
+        Variables:
+          PYTHONPATH: /var/task
