@@ -1,29 +1,30 @@
 # from config.DriverConfig import DriverConfig;
-from selenium.webdriver.common.by import By
 from selenium import webdriver
-from selenium.webdriver.chrome.options import Options
+from tempfile import mkdtemp
+from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from utils.DatabaseUtils import save_results, get_existing_links 
 
 class MarketplaceScraper:
     def __init__(self):
-        self.chrome_options = Options()
-        self.chrome_options.add_argument('--headless')
-        self.chrome_options.add_argument('--no-sandbox')
-        self.chrome_options.add_argument('--disable-dev-shm-usage')
-        self.chrome_options.binary_location = '/opt/chrome/chrome'
-        
-    def initialize_browser(self):
-        service = Service(executable_path='/opt/chromedriver')
-        self.browser = webdriver.Chrome(
-            service=service,
-            options=self.chrome_options
-        )
-        
-    def cleanup(self):
-        if hasattr(self, 'browser'):
-            self.browser.quit()
+        self.options = webdriver.ChromeOptions()
+        self.service = webdriver.ChromeService("/opt/chromedriver")
+
+        self.options.binary_location = '/opt/chrome/chrome'
+        self.options.add_argument("--headless=new")
+        self.options.add_argument('--no-sandbox')
+        self.options.add_argument("--disable-gpu")
+        self.options.add_argument("--window-size=1280x1696")
+        self.options.add_argument("--single-process")
+        self.options.add_argument("--disable-dev-shm-usage")
+        self.options.add_argument("--disable-dev-tools")
+        self.options.add_argument("--no-zygote")
+        self.options.add_argument(f"--user-data-dir={mkdtemp()}")
+        self.options.add_argument(f"--data-path={mkdtemp()}")
+        self.options.add_argument(f"--disk-cache-dir={mkdtemp()}")
+        self.options.add_argument("--remote-debugging-port=9222")
+
 
     def _is_location_allowed(self, location_text, cities_search, province_search):
         """
@@ -33,8 +34,9 @@ class MarketplaceScraper:
 
 
     def search_marketplace(self, item_name, max_price_percentage, max_price, cities_search, province_search, location_url, keywords):
-        found_links = set()
-        driver = webdriver.Chrome(options=self.chrome_options)
+        # found_links = set()
+        driver = webdriver.Chrome(options=self.options, service=self.service)
+
         driver.get(location_url)
 
         # Close login modal if present

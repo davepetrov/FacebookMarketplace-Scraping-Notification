@@ -18,18 +18,24 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: us-east-1
 
-      - name: Set up Python
-        uses: actions/setup-python@v2
-        with:
-          python-version: '3.11'
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v1
 
-      - name: Install dependencies
+      - name: Build and push Docker image
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          ECR_REPOSITORY: facebook-marketplace-scraper
+          IMAGE_TAG: ${{ github.sha }}
+          AWS_REGION: us-east-1
         run: |
-          pip install aws-sam-cli
+          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+          docker tag $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG $ECR_REGISTRY/$ECR_REPOSITORY:latest
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
 
-      - name: Update Lambda function code
+      - name: Update Lambda function
         run: |
-          zip -r function.zip .
           aws lambda update-function-code \
             --function-name FacebookMarketplace_Item_Scraper \
-            --zip-file fileb://function.zip
+            --image-uri ${{ steps.login-ecr.outputs.registry }}/facebook-marketplace-scraper:latest

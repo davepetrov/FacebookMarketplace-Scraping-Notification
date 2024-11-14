@@ -6,10 +6,15 @@ import time
 from decimal import Decimal
 from botocore.exceptions import ClientError
 import time
+import os
 
-# Initialize DynamoDB
-dynamodb = boto3.resource("dynamodb")
-table = dynamodb.Table(Config.DYNAMODB_TABLE_NAME)
+
+# Set the AWS region
+AWS_REGION = os.environ.get('AWS_REGION', 'us-east-1')
+
+# Initialize boto3 with region
+dynamodb = boto3.resource("dynamodb", region_name=AWS_REGION)
+table = dynamodb.Table(os.environ['DYNAMODB_TABLE_NAME'])
 
 def get_existing_links(links):
     """
