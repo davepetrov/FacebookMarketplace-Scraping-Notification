@@ -7,12 +7,13 @@ from selenium.webdriver.support import expected_conditions as EC
 from utils.DatabaseUtils import save_results, get_existing_links 
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
+import time
 
 class MarketplaceScraper:
     def __init__(self):
         self.options = Options()
         self.options.binary_location = "/opt/chrome/chrome"
-        self.options.add_argument("--headless")
+        self.options.add_argument("--headless=new")
         self.options.add_argument("--no-sandbox")
         self.options.add_argument("--disable-dev-shm-usage")
         self.options.add_argument("--single-process")
@@ -25,6 +26,12 @@ class MarketplaceScraper:
         self.options.add_argument("--disable-software-rasterizer")
         self.options.add_argument("--disable-notifications")
         self.options.add_argument("--disable-popup-blocking")
+        
+        # Add additional Chrome options
+        self.options.add_argument("--disable-blink-features=AutomationControlled")
+        self.options.add_argument("--disable-infobars")
+        self.options.add_experimental_option("excludeSwitches", ["enable-automation"])
+        self.options.add_experimental_option("useAutomationExtension", False)
         
         self.service = Service("/opt/chromedriver")
 
@@ -41,6 +48,9 @@ class MarketplaceScraper:
         driver = webdriver.Chrome(options=self.options, service=self.service)
 
         driver.get(location_url)
+        
+        time.sleep(5)
+
 
         # Close login modal if present
         try:
@@ -126,6 +136,8 @@ class MarketplaceScraper:
 
         except Exception as e:
             print(f"Could not load items for inspection for {item_name}: {e}")
+            return []  # Return empty list on error
+
 
         driver.quit()
         return saved_items
