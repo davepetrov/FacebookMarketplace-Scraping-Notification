@@ -1,0 +1,6 @@
+selenium==4.26.1
+selenium-wire==5.1.0
+pytz
+python-dotenv
+boto3
+twilio
