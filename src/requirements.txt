@@ -3,3 +3,4 @@ python-dotenv
 boto3
 twilio
 selenium
+mailjet_rest

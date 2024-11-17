@@ -6,13 +6,22 @@ load_dotenv()
 
 class Config:
     DYNAMODB_TABLE_NAME = os.getenv("DYNAMODB_TABLE_NAME")
+    
+    # Twilio WhatsApp Configuration
     ACCOUNT_SID = os.getenv("TWILIO_ACCOUNT_SID")
     AUTH_TOKEN = os.getenv("TWILIO_AUTH_TOKEN")
     WHATSAPP_NUMBER = os.getenv("TWILIO_WHATSAPP_NUMBER")
+    
+    # Mailjet Email Configuration
+    EMAIL_API_KEY = os.getenv("MAILJET_API_KEY")
+    EMAIL_SECRET_KEY = os.getenv("MAILJET_SECRET_KEY")
+    EMAIL_SENDER_EMAIL = os.getenv("MAILJET_SENDER_EMAIL")
+    EMAIL_SENDER_NAME = os.getenv("MAILJET_SENDER_NAME")
+    
+    # Notification Grace Period and Limits
     GRACE_PERIOD_START = int(os.getenv("GRACE_PERIOD_START", 0))
     GRACE_PERIOD_END = int(os.getenv("GRACE_PERIOD_END", 7))
     MAX_MESSAGE_LENGTH = int(os.getenv("MAX_MESSAGE_LENGTH", 1000))
-    CSV_FILE = os.getenv("CSV_FILE", "marketplace_results.csv")
     TIMEZONE = pytz.timezone(os.getenv("TIMEZONE", "America/New_York"))
     
     @staticmethod
@@ -31,7 +40,7 @@ class Config:
                 "province": os.getenv(f"SEARCH_{search_num}_PROVINCE"),
                 "location_url": os.getenv(f"SEARCH_{search_num}_LOCATION_URL"),
                 "keywords": os.getenv(f"SEARCH_{search_num}_KEYWORDS", "").split(","),
-                "users": os.getenv(f"SEARCH_{search_num}_USERS", "").split(","),
+                "users": eval(os.getenv(f"SEARCH_{search_num}_USERS", "[]"))
             })
             search_num += 1
         return searches
