@@ -1,46 +1,30 @@
-# from config.DriverConfig import DriverConfig;
-from selenium import webdriver
-from tempfile import mkdtemp
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.common.by import By
 from utils.DatabaseUtils import save_results, get_existing_links 
-from selenium.webdriver.chrome.service import Service
-from selenium.webdriver.chrome.options import ChromeOptions
+from config.DriverConfig import DriverConfig
+
 import time
 
+
 class MarketplaceScraper:
-    def __init__(self):
-        self.options = ChromeOptions()
-        self.options.add_argument("--headless=new")
-        self.options.add_argument("--no-sandbox")
-        self.options.add_argument("--disable-dev-shm-usage")
-        self.options.add_argument("--disable-gpu")
-        self.options.add_argument("--disable-dev-tools")
-        self.options.add_argument("--no-zygote")
-        self.options.add_argument("--single-process")
-        self.options.add_argument(f"--user-data-dir={mkdtemp()}")
-        self.options.add_argument(f"--data-path={mkdtemp()}")
-        self.options.add_argument("--log-path=/tmp")
-        self.options.binary_location = "/opt/chrome/chrome-linux64/chrome"
+    
 
-        self.service = Service(
-            executable_path="/opt/chrome-driver/chromedriver-linux64/chromedriver",
-            service_log_path="/tmp/chromedriver.log"
-        )
-
-
-    def _is_location_allowed(self, location_text, cities_search, province_search):
+    def _is_location_allowed(self, city, province, cities_search, province_search):
         """
         Check if the extracted location matches any of the desired cities and provinces.
         """
-        return any(city in location_text for city in cities_search) and any(province in location_text for province in province_search)
+        return (city in cities_search) and (province in province_search)
 
 
     def search_marketplace(self, item_name, max_price_percentage, max_price, cities_search, province_search, location_url, keywords):
         # found_links = set()
-        driver = webdriver.Chrome(options=self.options, service=self.service)
+        saved_items = []  
+        driverConfig = DriverConfig() 
+        driver = driverConfig.driver
 
+        # Use the DriverConfig context manager
         driver.get(location_url)
         
         time.sleep(5)
@@ -79,7 +63,7 @@ class MarketplaceScraper:
                     
                     # Skip if item is a duplicate
                     if item_link in existing_links:
-                        print(f"Duplicate item '{item_link}' found, skipping.")
+                        print(f"[X] Duplicate item '{item_link}' found, skipping.")
                         continue
                     
                     price_element = item.find_element(By.XPATH, ".//span[contains(text(), '$') or contains(text(), 'Free')]")
@@ -87,7 +71,7 @@ class MarketplaceScraper:
                     price_text = price_element.text.replace("$", "").replace(",", "").strip()
                     
                     if "free" in price_text.lower():
-                        print(f"Item '{title_element.text}' is labeled as 'Free' and will be ignored.")
+                        print(f"[X]Item '{title_element.text}' is labeled as 'Free' and will be ignored.")
                         continue
                     else:
                         price_text = price_text[2::]
@@ -104,13 +88,14 @@ class MarketplaceScraper:
                         print(f"Location not found for item '{item_title}'. Skipping.")
                         continue
                     
-                    # Check if the location matches the search criteria
-                    if not self._is_location_allowed(item_location, cities_search, province_search):
-                        print(f"Item '{item_title}' is in '{item_location}', which does not match the search criteria.")
-                        continue
-
                     # Log extracted details
                     print(f"Extracted details - Title: {item_title}, Price: {item_price}, City: {city}, Province: {province}, Link: {item_link}")
+
+
+                    # Check if the location matches the search criteria
+                    if not self._is_location_allowed(city, province, cities_search, province_search):
+                        print(f"[X] Item '{item_title}' is in '{item_location}', which does not match the search criteria.")
+                        continue
                     
                     # Check price and keywords
                     price_threshold = max_price * max_price_percentage
@@ -121,9 +106,9 @@ class MarketplaceScraper:
                             save_results(item_name, item_price, item_title, city, province, item_link)
                             saved_items.append((item_name, item_price, item_title, city, province, item_link))
                         else:
-                            print("Item doesn't match keyword criteria.")
+                            print("[X] Item doesn't match keyword criteria.")
                     else:
-                        print("Item doesn't match price criteria.\n")
+                        print("[X] Item doesn't match price criteria.\n")
 
                 except Exception as inner_e:
                     print(f"Error processing item {idx + 1}: {inner_e}")

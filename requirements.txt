@@ -1,5 +1,0 @@
-twilio
-python-dotenv
-selenium==4.26.1
-boto3
-pytz

@@ -1,71 +1,50 @@
-from services.WhatsAppService import WhatsAppService
-from services.MarketplaceScraper import MarketplaceScraper
+import time
+from concurrent.futures import ThreadPoolExecutor
 from config.Config import Config
 from utils.TimeUtils import is_within_grace_period
-from concurrent.futures import ThreadPoolExecutor
-import time
-import json
+from services.MarketplaceScraper import MarketplaceScraper 
+from services.WhatsAppService import WhatsAppService  
+
 
 def lambda_handler(event, context):
     whatsapp_service = WhatsAppService()
     scraper = MarketplaceScraper()
-    try:
-        # scraper.initialize_browser()
-        
-        accumulated_items = []
-        saved_items = []
-        # Run searches in parallel
-        with ThreadPoolExecutor(max_workers=1) as executor:
-            futures = [
-                executor.submit(
-                    scraper.search_marketplace,
-                    search["item_name"],
-                    search["max_price_percentage"],
-                    search["max_price"],
-                    search["cities"],
-                    search["province"],
-                    search["location_url"],
-                    search["keywords"]
-                )
-                for search in Config.SEARCHES
-            ]
+    accumulated_items = []
 
-        for future in futures:
-            saved_items.extend(future.result())
-        accumulated_items.extend(saved_items)
+    with ThreadPoolExecutor(max_workers=2) as executor:
+        futures = [
+            executor.submit(
+                scraper.search_marketplace,
+                search["item_name"],
+                search["max_price_percentage"],
+                search["max_price"],
+                search["cities"],
+                search["province"],
+                search["location_url"],
+                search["keywords"]
+            )
+            for search in Config.SEARCHES
+        ]
 
-        # Count accumulated listings
-        accumulated_count = len(accumulated_items)
-        print(f"Total accumulated listings: {accumulated_count}")
+    for future in futures:
+        accumulated_items.extend(future.result())
 
-        if is_within_grace_period():
-            print("\nWithin grace period. Accumulating new items without sending notifications.")
-        else:
-            for search in Config.SEARCHES:
-                items_for_search = [item for item in accumulated_items if item[0] == search["item_name"]]
-                
-                if items_for_search:
-                    message = f"New items found for {search['item_name']}:\n\n"
-                    for item in items_for_search:
-                        message += (f"Listing Title: {item[2]}\nPrice: ${item[1]}\nLocation: {item[3]}, {item[4]}\nLink: {item[5]}\n\n")
+    if is_within_grace_period():
+        return {"statusCode": 200, "body": "Within grace period, no notifications sent."}
 
-                    whatsapp_service.send_messages(message, search["users"])
-                    print(f"Sent WhatsApp notification for {search['item_name']} to users.")
-                    
-                    accumulated_items = [item for item in accumulated_items if item not in items_for_search]
+    for search in Config.SEARCHES:
+        items_for_search = [item for item in accumulated_items if item[0] == search["item_name"]]
+        if items_for_search:
+            message = f"New items found for {search['item_name']}:\n\n"
+            for item in items_for_search:
+                message += f"Title: {item[2]}\nPrice: ${item[1]}\nLocation: {item[3]}, {item[4]}\nLink: {item[5]}\n\n"
+            whatsapp_service.send_messages(message, search["users"])
 
-            
-        return {
-            'statusCode': 200,
-            'body': json.dumps({
-                'message': 'Scraping completed successfully'
-            })
-        }
-    except Exception as e:
-        print(f"Error in lambda_handler: {str(e)}")
-        return {
-            'statusCode': 500,
-            'body': json.dumps({
-                'error': str(e)
-            })
-        }
+    return {"statusCode": 200, "body": "Search and notifications completed."}
+
+if __name__ == "__main__":
+    iteration_count=0
+    while True:
+        lambda_handler(event=None, context=None)
+        print(f"\nIteration {iteration_count} Complete")
+        time.sleep(250)
