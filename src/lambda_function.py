@@ -47,4 +47,5 @@ if __name__ == "__main__":
     while True:
         lambda_handler(event=None, context=None)
         print(f"\nIteration {iteration_count} Complete")
+        iteration_count+=1
         time.sleep(250)
