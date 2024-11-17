@@ -123,6 +123,11 @@ For continuous operation, deploy the script to a cloud platform such as AWS Lamb
 
 ---
 
+## Example Whatsapp message
+![image](images/image-1.png)
+
+
+
 ## Contributing
 
 We welcome contributions! To contribute:
