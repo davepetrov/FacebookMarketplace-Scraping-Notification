@@ -1,7 +1,7 @@
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-from utils.DatabaseUtils import save_results, get_existing_links
+from utils.DatabaseUtils import save_items, get_existing_links
 from config.DriverConfig import DriverConfig
 
 import time
@@ -53,7 +53,7 @@ class MarketplaceScraper:
             if unseen_links:
                 # Check against the database only if there are unseen links
                 existing_links = get_existing_links(unseen_links)
-                print(f"Existing links from the database: {len(existing_links)}")
+                print(f"\nExisting links from the database: {len(existing_links)}")
             else:
                 existing_links = set()
 
@@ -118,6 +118,16 @@ class MarketplaceScraper:
             print(f"Could not load items for inspection for {item_name}: {e}\n")
         finally:
             driver.quit()
+            
+        # Return only the new listings
+        if new_items:
+            try:
+                save_items(new_items)
+                print(f"Saved {len(new_items)} new items to the database.")
+            except Exception as save_error:
+                print(f"Error saving results to the database: {save_error}")
+        else:
+            print(f"No new items to save for {item_name}.\n")
 
         # Return only the new listings
         return new_items

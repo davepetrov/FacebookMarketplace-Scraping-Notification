@@ -38,23 +38,25 @@ def get_existing_links(links):
         return set()
 
 
-def save_results(item_name, item_price, item_title, city, province, item_link):
+def save_items(items):
     """
     This function saves a new item to DynamoDB, including city and province.
     """
-    try:
-        table.put_item(
-            Item={
-                "item_link": item_link,
-                "item_name": item_name,
-                "item_price": Decimal(str(item_price)), 
-                "item_title": item_title,
-                "city": city,  
-                "province": province,  
-                "timestamp": int(time.time())
-            }
-        )
-        print(f"Saved new result: {item_title} for ${item_price}. City: {city}, Province: {province}, Link: {item_link}")
+    for item_name, item_price, item_title, city, province, item_link in items:
         
-    except ClientError as e:
-        print(f"Error saving item: {e}")
+        try:
+            table.put_item(
+                Item={
+                    "item_link": item_link,
+                    "item_name": item_name,
+                    "item_price": Decimal(str(item_price)), 
+                    "item_title": item_title,
+                    "city": city,  
+                    "province": province,  
+                    "timestamp": int(time.time())
+                }
+            )
+            print(f"Saved new result: {item_title} for ${item_price}. City: {city}, Province: {province}, Link: {item_link}")
+            
+        except ClientError as e:
+            print(f"Error saving item: {e}")

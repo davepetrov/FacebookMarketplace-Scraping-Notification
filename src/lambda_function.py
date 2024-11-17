@@ -35,7 +35,7 @@ def lambda_handler(event, context):
     for search in Config.SEARCHES:
         items_for_search = [item for item in accumulated_items if item[0] == search["item_name"]]
         if items_for_search:
-            message = f"New items found for {search['item_name']}:\n\n"
+            message = f"New items found for {search['item_name']}\n\n"
             for item in items_for_search:
                 message += f"Title: {item[2]}\nPrice: ${item[1]}\nLocation: {item[3]}, {item[4]}\nLink: {item[5]}\n\n"
             message_service.send_notifications(message, search["users"])
